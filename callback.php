@@ -2,9 +2,9 @@
 session_start();
 
 // Define AniList API credentials
-$client_id = "23612";
+$client_id = "23612"; // Your client ID
 $client_secret = getenv('CLIENT_SECRET'); // Your client secret
-$redirect_uri = "https://aniprotracker.onrender.com/callback"; // Redirect URI
+$redirect_uri = "https://aniprotracker.onrender.com/callback.php"; // Redirect URI
 
 // Check if the code and state parameters are set
 if (isset($_GET['code']) && isset($_GET['state'])) {
@@ -36,6 +36,17 @@ if (isset($_GET['code']) && isset($_GET['state'])) {
     // Execute the request and get the response
     $response = curl_exec($ch);
     curl_close($ch);
+
+    // Debugging: Check if there was an error in the cURL request
+    if (curl_errno($ch)) {
+        echo 'Curl error: ' . curl_error($ch);
+        exit;
+    }
+
+    // Debugging: Display the full response from AniList API
+    echo "<pre>Response: ";
+    print_r($response);
+    echo "</pre>";
 
     // Decode the response to extract the access token and user info
     $response_data = json_decode($response, true);
@@ -71,13 +82,18 @@ if (isset($_GET['code']) && isset($_GET['state'])) {
         // Decode the user info response
         $user_info = json_decode($user_info_response, true);
 
+        // Debugging: Display the user info response
+        echo "<pre>User Info: ";
+        print_r($user_info);
+        echo "</pre>";
+
         if (isset($user_info['data']['Viewer']['id'])) {
             // Store the user ID in the session
             $_SESSION['user_id'] = $user_info['data']['Viewer']['id'];
             echo "Login successful. Redirecting to your profile...";
 
-            // Move header redirection here to avoid output before redirection
-            header('Location: profile.php'); // Redirect to the profile page
+            // Redirect to profile.php
+            header('Location: profile.php');
             exit;
         } else {
             echo "Error: Could not fetch user data.";
