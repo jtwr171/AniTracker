@@ -1,35 +1,34 @@
 <?php
-// profile.php
+session_start();
 
-//require_once 'config.php';  // Include the config file that loads the .env
-
-// Now you can use environment variables
+// Define AniList API credentials
 $client_id = "23612";
-$client_secret = getenv('CLIENT_SECRET');
+$client_secret = getenv('CLIENT_SECRET'); // Retrieve from environment variables
+$redirect_uri = "https://aniprotracker.onrender.com/callback"; // Redirect URI
 
-// Your code that needs access to the environment variables
- // Retrieve the AniList Client Secret from environment variables
-$redirect_uri = "https://aniprotracker.onrender.com/callback";  // Local Redirect URI
-
-$username = isset($_GET['username']) ? $_GET['username'] : '';  // Get the username
+// Get the username from the query parameters
+$username = isset($_GET['username']) ? $_GET['username'] : '';  
 
 if ($username) {
-    // Prepare the query parameters for the Authorization Code Grant
+    // Generate a random state for CSRF protection
+    $state = bin2hex(random_bytes(16));
+    $_SESSION['state'] = $state; // Store the state in the session for later verification
+
+    // Build the query parameters for the authorization URL
     $query = [
         'client_id' => $client_id,
-        'response_type' => 'code',  // The response type should be 'code' for Authorization Code Grant
+        'response_type' => 'code', 
         'redirect_uri' => $redirect_uri,
-        'state' => bin2hex(random_bytes(16)),  // Generate a random state for security
+        'state' => $state, // Include the state for security
     ];
 
-    // Build the authorization URL
+    // Build the AniList authorization URL
     $url = 'https://anilist.co/api/v2/oauth/authorize?' . http_build_query($query);
 
-    // Redirect the user to AniList for authentication
+    // Redirect the user to AniList
     header("Location: $url");
     exit;
 } else {
-    echo "Please provide a username.";
+    echo "Error: Please provide a username.";
 }
 ?>
-//test
