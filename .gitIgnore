@@ -1,0 +1,38 @@
+# Ignore .env file containing sensitive environment variables
+.env
+
+# Ignore all log files
+*.log
+
+# Ignore the vendor directory if using Composer
+/vendor/
+
+# Ignore composer.lock file (optional, if you prefer not to track it)
+composer.lock
+
+# Ignore PHPUnit test result files
+phpunit.xml
+phpunit.xml.dist
+
+# Ignore IDE or editor-specific files (e.g., for Visual Studio Code, PhpStorm)
+.vscode/
+.idea/
+
+# Ignore OS-specific files (e.g., Mac or Windows system files)
+.DS_Store
+Thumbs.db
+
+# Ignore temporary files (e.g., generated during development)
+*.tmp
+*.swp
+*.swo
+
+# Ignore compiled or cached files
+*.cache
+*.compiled
+
+# Ignore build or distribution directories
+/build/
+/dist/
+
+//test
