@@ -4,7 +4,7 @@
 //require_once 'config.php';  // Include the config file that loads the .env
 
 // Now you can use environment variables
-$client_id = getenv('CLIENT_ID');
+$client_id = "23612";
 $client_secret = getenv('CLIENT_SECRET');
 
 // Your code that needs access to the environment variables
