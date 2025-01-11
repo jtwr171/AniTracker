@@ -8,6 +8,7 @@
 <body>
     <h1>Welcome to AniProTracker</h1>
     <p>Enter your AniList username to track your anime progress.</p>
+    <p>wtf is going on</p>
 
     <form action="authorize.php" method="GET">
         <label for="username">AniList Username:</label>
