@@ -17,3 +17,6 @@
     </form>
 </body>
 </html>
+<?php
+echo 'Client Secret: ' . htmlspecialchars($client_secret);
+?>
