@@ -4,7 +4,7 @@ session_start();
 // Define AniList API credentials
 $client_id = "23612";
 $client_secret = getenv('CLIENT_SECRET'); // Your client secret
-$redirect_uri = "http://localhost:3000/callback.php"; // Redirect URI
+$redirect_uri = "https://aniprotracker.onrender.com/callback"; // Redirect URI
 
 // Check if the code and state parameters are set
 if (isset($_GET['code']) && isset($_GET['state'])) {
