@@ -1,68 +1,66 @@
 <?php
 session_start();
 
-// Define client details and redirect URI
+// AniList API credentials
 $client_id = "23612";
-$client_secret = getenv('CLIENT_SECRET'); // Retrieve from environment variables
-$redirect_uri = "https://aniprotracker.onrender.com/callback"; // Your Redirect URI
+$client_secret = getenv('CLIENT_SECRET'); // Retrieved from environment variables
+$redirect_uri = "https://aniprotracker.onrender.com/callback"; // Redirect URI
 
-// Check if the authorization code is present
-if (!isset($_GET['code']) || empty($_GET['code'])) {
-    echo "Error: No authorization code received.";
+// Validate the received state parameter
+if (!isset($_GET['state']) || $_GET['state'] !== $_SESSION['state']) {
+    echo "Error: Invalid state parameter.";
     exit;
 }
 
 // Get the authorization code from the callback URL
-$code = $_GET['code'];
+$code = isset($_GET['code']) ? $_GET['code'] : null;
 
-// Exchange the authorization code for an access token
-$url = 'https://anilist.co/api/v2/oauth/token';
-$data = [
-    'grant_type' => 'authorization_code', // Specify the authorization code grant type
-    'client_id' => $client_id,
-    'client_secret' => $client_secret,
-    'redirect_uri' => $redirect_uri,
-    'code' => $code,
-];
+if ($code) {
+    // Exchange the authorization code for an access token
+    $url = 'https://anilist.co/api/v2/oauth/token';
+    $data = [
+        'grant_type' => 'authorization_code',
+        'client_id' => $client_id,
+        'client_secret' => $client_secret,
+        'redirect_uri' => $redirect_uri,
+        'code' => $code,
+    ];
 
-// Initialize cURL to send a POST request
-$ch = curl_init($url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-$response = curl_exec($ch);
+    // Make the POST request to AniList
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
 
-// Check for cURL errors
-if ($response === false) {
-    echo "cURL Error: " . curl_error($ch);
-    curl_close($ch);
-    exit;
-}
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-curl_close($ch);
-
-// Decode the JSON response
-$response_data = json_decode($response, true);
-
-// Check if the access token is present in the response
-if (isset($response_data['access_token'])) {
-    // Store the access token in the session
-    $_SESSION['access_token'] = $response_data['access_token'];
-
-    // Optionally store other data from the response (e.g., refresh token, user info)
-    if (isset($response_data['refresh_token'])) {
-        $_SESSION['refresh_token'] = $response_data['refresh_token'];
+    if (curl_errno($ch)) {
+        echo "cURL Error: " . curl_error($ch);
+        curl_close($ch);
+        exit;
     }
 
-    // Redirect the user to the profile page
-    header('Location: profile.php');
-    exit;
+    curl_close($ch);
+
+    // Decode the JSON response
+    $response_data = json_decode($response, true);
+
+    if ($http_code === 200 && isset($response_data['access_token'])) {
+        // Store the access token in the session
+        $_SESSION['access_token'] = $response_data['access_token'];
+
+        // Redirect the user to the profile page
+        header('Location: profile.php');
+        exit;
+    } else {
+        echo "Error: Failed to retrieve access token.<br>";
+        echo "HTTP Code: $http_code<br>";
+        echo "Response: <pre>" . htmlspecialchars($response) . "</pre>";
+        exit;
+    }
 } else {
-    // Handle API errors
-    echo "Error retrieving access token.";
-    echo "<pre>";
-    print_r($response_data); // Debugging info
-    echo "</pre>";
+    echo "Error: Authorization code not received.";
     exit;
 }
 ?>
