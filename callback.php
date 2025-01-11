@@ -1,10 +1,10 @@
 <?php
 session_start();
-
+echo "Callback reached!<br>";
 // Define AniList API credentials
 $client_id = "23612";
 $client_secret = getenv('CLIENT_SECRET'); // Your client secret (from environment variable)
-$redirect_uri = "https://aniprotracker.onrender.com/callback"; // Redirect URI
+$redirect_uri = "https://aniprotracker.onrender.com/callback.php"; // Redirect URI
 
 // Debugging: Output session to check if state exists
 // Uncomment these lines if needed for debugging
@@ -93,7 +93,7 @@ if (isset($_GET['code']) && isset($_GET['state'])) {
 
         // Debugging: Print the user info response for analysis
         // Uncomment these lines if needed
-        // var_dump($user_info);
+         var_dump($user_info);
 
         if (isset($user_info['data']['Viewer']['id'])) {
             // Store the user ID in the session
