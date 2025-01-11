@@ -1,16 +1,12 @@
 <?php
 session_start();
-echo "Callback reached!<br>";
+
 // Define AniList API credentials
 $client_id = "23612";
-$client_secret = getenv('CLIENT_SECRET'); // Your client secret (from environment variable)
-$redirect_uri = "https://aniprotracker.onrender.com/callback.php"; // Redirect URI
+$client_secret = getenv('CLIENT_SECRET'); // Your client secret
+$redirect_uri = "https://aniprotracker.onrender.com/callback"; // Redirect URI
 
-// Debugging: Output session to check if state exists
-// Uncomment these lines if needed for debugging
- echo "State in session: " . $_SESSION['state'] . "<br>";
- echo "State in GET: " . $_GET['state'] . "<br>";
-
+// Check if the code and state parameters are set
 if (isset($_GET['code']) && isset($_GET['state'])) {
     $code = $_GET['code'];
     $state = $_GET['state'];
@@ -41,18 +37,8 @@ if (isset($_GET['code']) && isset($_GET['state'])) {
     $response = curl_exec($ch);
     curl_close($ch);
 
-    // Check if there was an error during the cURL request
-    if ($response === false) {
-        echo "Error: cURL request failed.";
-        exit;
-    }
-
     // Decode the response to extract the access token and user info
     $response_data = json_decode($response, true);
-
-    // Debugging: Print the API response for analysis
-    // Uncomment these lines if needed
-    // var_dump($response_data);
 
     if (isset($response_data['access_token'])) {
         // Store the access token and user ID in the session
@@ -82,23 +68,15 @@ if (isset($_GET['code']) && isset($_GET['state'])) {
         $user_info_response = curl_exec($ch);
         curl_close($ch);
 
-        // Check if there was an error during the cURL request
-        if ($user_info_response === false) {
-            echo "Error: cURL request failed while fetching user info.";
-            exit;
-        }
-
         // Decode the user info response
         $user_info = json_decode($user_info_response, true);
-
-        // Debugging: Print the user info response for analysis
-        // Uncomment these lines if needed
-         var_dump($user_info);
 
         if (isset($user_info['data']['Viewer']['id'])) {
             // Store the user ID in the session
             $_SESSION['user_id'] = $user_info['data']['Viewer']['id'];
             echo "Login successful. Redirecting to your profile...";
+
+            // Move header redirection here to avoid output before redirection
             header('Location: profile.php'); // Redirect to the profile page
             exit;
         } else {
