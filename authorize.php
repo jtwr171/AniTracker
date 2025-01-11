@@ -1,7 +1,7 @@
 <?php
 // profile.php
 
-require_once 'config.php';  // Include the config file that loads the .env
+//require_once 'config.php';  // Include the config file that loads the .env
 
 // Now you can use environment variables
 $client_id = getenv('CLIENT_ID');
@@ -9,7 +9,7 @@ $client_secret = getenv('CLIENT_SECRET');
 
 // Your code that needs access to the environment variables
  // Retrieve the AniList Client Secret from environment variables
-$redirect_uri = "https://animeprotracker.onrender.com/callback";  // Local Redirect URI
+$redirect_uri = "https://aniprotracker.onrender.com/callback";  // Local Redirect URI
 
 $username = isset($_GET['username']) ? $_GET['username'] : '';  // Get the username
 

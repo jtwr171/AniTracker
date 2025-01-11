@@ -3,7 +3,7 @@ session_start();
 
 // profile.php
 
-require_once 'config.php';  // Include the config file that loads the .env
+//require_once 'config.php';  // Include the config file that loads the .env
 
 // Now you can use environment variables
 $client_id = getenv('CLIENT_ID');
@@ -11,7 +11,7 @@ $client_secret = getenv('CLIENT_SECRET');
 
 // Your code that needs access to the environment variables
 
-$redirect_uri = "https://animeprotracker.onrender.com/callback";  // Your Redirect URI
+$redirect_uri = "https://aniprotracker.onrender.com/callback";  // Your Redirect URI
 
 // Get the authorization code from the callback URL
 $code = isset($_GET['code']) ? $_GET['code'] : '';  // The 'code' parameter in the URL
