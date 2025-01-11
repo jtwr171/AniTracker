@@ -18,5 +18,14 @@
 </body>
 </html>
 <?php
-echo 'Client Secret: ' . htmlspecialchars($client_secret);
+// Check if the CLIENT_SECRET is accessible
+$client_secret = getenv('CLIENT_SECRET');
+
+// Debugging: Output the CLIENT_SECRET value (or a message if not set)
+if ($client_secret) {
+    echo 'Client Secret is accessible: ' . htmlspecialchars($client_secret);
+} else {
+    echo 'CLIENT_SECRET is not accessible.';
+}
 ?>
+
