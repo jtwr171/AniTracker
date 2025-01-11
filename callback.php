@@ -1,57 +1,66 @@
 <?php
+// Add these debug lines at the very top of your callback.php file to check if the page is triggered
+echo "Callback page triggered";
+exit;
+
+// Debugging: Output incoming parameters
+var_dump($_GET);
+exit;
+
+// Your existing callback code below...
 session_start();
 
-// Check if the 'code' parameter is in the URL
-if (isset($_GET['code']) && !empty($_GET['code'])) {
-    // Get the client secret from the environment variable
-    $client_secret = getenv('CLIENT_SECRET'); // Ensure you have this environment variable set in Render
+if (!isset($_GET['code'])) {
+    echo "Error: 'code' parameter missing in URL.";
+    exit;
+}
 
-    // Define AniList's token exchange URL
-    $url = "https://anilist.co/api/v2/oauth/token";
-    
-    // Prepare the POST data to exchange the code for an access token
-    $data = [
-        'grant_type' => 'authorization_code',
-        'client_id' => '23612',  // Your AniList client ID
-        'client_secret' => $client_secret,  // Use client secret from the environment variable
-        'redirect_uri' => 'https://aniprotracker.onrender.com/callback',  // Your callback URL
-        'code' => $_GET['code']
-    ];
+$code = $_GET['code'];
+$client_secret = getenv('ANILIST_CLIENT_SECRET'); // Fetch client secret from environment
 
-    // Use cURL to send the request
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-    $response = curl_exec($ch);
+$url = "https://anilist.co/api/v2/oauth/token";
 
-    // Check if the request was successful
-    if (!$response) {
-        echo "Error: " . curl_error($ch);
-        exit;
-    }
+// Prepare data for token exchange
+$data = [
+    'grant_type' => 'authorization_code',
+    'client_id' => '23612',  // AniList client ID
+    'client_secret' => $client_secret, // AniList client secret
+    'redirect_uri' => 'https://aniprotracker.onrender.com/callback',
+    'code' => $code
+];
 
-    curl_close($ch);
+// Send POST request to AniList API
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+$response = curl_exec($ch);
 
-    // Decode the response (which contains the access token)
-    $response_data = json_decode($response, true);
+if (curl_errno($ch)) {
+    echo 'cURL Error: ' . curl_error($ch);
+    exit;
+}
+curl_close($ch);
 
-    // Check if the access token was returned
-    if (isset($response_data['access_token'])) {
-        // Store the access token in the session
-        $_SESSION['access_token'] = $response_data['access_token'];
+// Log the response (to check if access token is returned)
+file_put_contents('anilist_api_response.log', $response);
 
-        // Redirect the user to the profile page (or wherever you want)
-        header("Location: profile.php");
-        exit;
-    } else {
-        // Handle any error, for example, missing access token
-        echo "Error: Access token not found.";
-        exit;
-    }
+// Decode the response
+$response_data = json_decode($response, true);
+
+// Check if access token is returned
+if (isset($response_data['access_token'])) {
+    // Store access token in session
+    $_SESSION['access_token'] = $response_data['access_token'];
+
+    // Redirect to profile page
+    header("Location: profile.php");
+    exit;
 } else {
-    echo "Error: Code parameter missing in the URL.";
+    // If no access token, output the response for debugging
+    echo "Error: Access token not found. Response data: ";
+    var_dump($response_data);
     exit;
 }
 ?>
