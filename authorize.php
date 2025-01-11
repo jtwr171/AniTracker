@@ -3,11 +3,11 @@ session_start();
 
 // Define AniList API credentials
 $client_id = "23612";
-$client_secret = getenv('CLIENT_SECRET'); // Retrieve from environment variables
-$redirect_uri = "https://aniprotracker.onrender.com/callback"; // Redirect URI
+$client_secret = getenv('CLIENT_SECRET'); // Hardcoded client_secret for now
+$redirect_uri = "http://localhost:3000/callback.php"; // The redirect URI registered in AniList OAuth settings
 
 // Get the username from the query parameters
-$username = isset($_GET['username']) ? $_GET['username'] : '';  
+$username = isset($_GET['username']) ? $_GET['username'] : '';
 
 if ($username) {
     // Generate a random state for CSRF protection
@@ -17,15 +17,15 @@ if ($username) {
     // Build the query parameters for the authorization URL
     $query = [
         'client_id' => $client_id,
-        'response_type' => 'code', 
-        'redirect_uri' => $redirect_uri,
-        'state' => $state, // Include the state for security
+        'response_type' => 'code', // We are requesting an authorization code
+        'redirect_uri' => $redirect_uri, // Callback URL for the AniList redirect
+        'state' => $state, // Including the CSRF state for security
     ];
 
     // Build the AniList authorization URL
     $url = 'https://anilist.co/api/v2/oauth/authorize?' . http_build_query($query);
 
-    // Redirect the user to AniList
+    // Redirect the user to AniList for authorization
     header("Location: $url");
     exit;
 } else {

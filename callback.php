@@ -1,66 +1,89 @@
 <?php
-// Add these debug lines at the very top of your callback.php file to check if the page is triggered
-echo "Callback page triggered";
-exit;
-
-// Debugging: Output incoming parameters
-var_dump($_GET);
-exit;
-
-// Your existing callback code below...
 session_start();
 
-if (!isset($_GET['code'])) {
-    echo "Error: 'code' parameter missing in URL.";
-    exit;
-}
+// Define AniList API credentials
+$client_id = "23612";
+$client_secret = getenv('CLIENT_SECRET'); // Your client secret
+$redirect_uri = "http://localhost:3000/callback.php"; // Redirect URI
 
-$code = $_GET['code'];
-$client_secret = getenv('ANILIST_CLIENT_SECRET'); // Fetch client secret from environment
+// Check if the code and state parameters are set
+if (isset($_GET['code']) && isset($_GET['state'])) {
+    $code = $_GET['code'];
+    $state = $_GET['state'];
 
-$url = "https://anilist.co/api/v2/oauth/token";
+    // Verify that the state matches to prevent CSRF attacks
+    if ($_SESSION['state'] !== $state) {
+        echo "Error: Invalid state.";
+        exit;
+    }
 
-// Prepare data for token exchange
-$data = [
-    'grant_type' => 'authorization_code',
-    'client_id' => '23612',  // AniList client ID
-    'client_secret' => $client_secret, // AniList client secret
-    'redirect_uri' => 'https://aniprotracker.onrender.com/callback',
-    'code' => $code
-];
+    // Prepare the data to exchange the authorization code for an access token
+    $data = [
+        'grant_type' => 'authorization_code',
+        'client_id' => $client_id,
+        'client_secret' => $client_secret,
+        'code' => $code,
+        'redirect_uri' => $redirect_uri,
+    ];
 
-// Send POST request to AniList API
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-$response = curl_exec($ch);
+    // Initialize cURL for the token request
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://anilist.co/api/v2/oauth/token");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
 
-if (curl_errno($ch)) {
-    echo 'cURL Error: ' . curl_error($ch);
-    exit;
-}
-curl_close($ch);
+    // Execute the request and get the response
+    $response = curl_exec($ch);
+    curl_close($ch);
 
-// Log the response (to check if access token is returned)
-file_put_contents('anilist_api_response.log', $response);
+    // Decode the response to extract the access token and user info
+    $response_data = json_decode($response, true);
 
-// Decode the response
-$response_data = json_decode($response, true);
+    if (isset($response_data['access_token'])) {
+        // Store the access token and user ID in the session
+        $_SESSION['access_token'] = $response_data['access_token'];
 
-// Check if access token is returned
-if (isset($response_data['access_token'])) {
-    // Store access token in session
-    $_SESSION['access_token'] = $response_data['access_token'];
+        // Get user info (optional but good for debugging)
+        $user_info_url = 'https://graphql.anilist.co';
+        $user_info_query = '{
+            Viewer {
+                id
+                name
+            }
+        }';
 
-    // Redirect to profile page
-    header("Location: profile.php");
-    exit;
+        // Prepare the GraphQL request
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $user_info_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $response_data['access_token'],
+            'Content-Type: application/json',
+        ]);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['query' => $user_info_query]));
+
+        // Execute the GraphQL request to get user info
+        $user_info_response = curl_exec($ch);
+        curl_close($ch);
+
+        // Decode the user info response
+        $user_info = json_decode($user_info_response, true);
+
+        if (isset($user_info['data']['Viewer']['id'])) {
+            // Store the user ID in the session
+            $_SESSION['user_id'] = $user_info['data']['Viewer']['id'];
+            echo "Login successful. Redirecting to your profile...";
+            header('Location: profile.php'); // Redirect to the profile page
+            exit;
+        } else {
+            echo "Error: Could not fetch user data.";
+        }
+    } else {
+        echo "Error: Could not retrieve access token.";
+    }
 } else {
-    // If no access token, output the response for debugging
-    echo "Error: Access token not found. Response data: ";
-    var_dump($response_data);
-    exit;
+    echo "Error: Missing authorization code or state.";
 }
 ?>
