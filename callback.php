@@ -1,67 +1,57 @@
 <?php
 session_start();
 
-// Debugging: Log the GET parameters
-file_put_contents('debug.log', "GET Parameters:\n" . print_r($_GET, true), FILE_APPEND);
+// Check if the 'code' parameter is in the URL
+if (isset($_GET['code']) && !empty($_GET['code'])) {
+    // Get the client secret from the environment variable
+    $client_secret = getenv('CLIENT_SECRET'); // Ensure you have this environment variable set in Render
 
-// AniList API credentials
-$client_id = "23612";
-$client_secret = getenv('CLIENT_SECRET');
-$redirect_uri = "https://aniprotracker.onrender.com/callback";
-
-// Validate the state parameter
-if (!isset($_GET['state']) || $_GET['state'] !== $_SESSION['state']) {
-    echo "Error: Invalid state parameter.";
-    exit;
-}
-
-// Get the authorization code
-$code = isset($_GET['code']) ? $_GET['code'] : null;
-
-if ($code) {
-    // Exchange the authorization code for an access token
-    $url = 'https://anilist.co/api/v2/oauth/token';
+    // Define AniList's token exchange URL
+    $url = "https://anilist.co/api/v2/oauth/token";
+    
+    // Prepare the POST data to exchange the code for an access token
     $data = [
         'grant_type' => 'authorization_code',
-        'client_id' => $client_id,
-        'client_secret' => $client_secret,
-        'redirect_uri' => $redirect_uri,
-        'code' => $code,
+        'client_id' => '23612',  // Your AniList client ID
+        'client_secret' => $client_secret,  // Use client secret from the environment variable
+        'redirect_uri' => 'https://aniprotracker.onrender.com/callback',  // Your callback URL
+        'code' => $_GET['code']
     ];
 
-    $ch = curl_init($url);
+    // Use cURL to send the request
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-
     $response = curl_exec($ch);
 
-    // Debugging: Log the raw API response
-    file_put_contents('debug.log', "AniList API Response:\n" . print_r($response, true), FILE_APPEND);
-
-    if (curl_errno($ch)) {
-        echo "cURL Error: " . curl_error($ch);
-        curl_close($ch);
+    // Check if the request was successful
+    if (!$response) {
+        echo "Error: " . curl_error($ch);
         exit;
     }
 
     curl_close($ch);
 
+    // Decode the response (which contains the access token)
     $response_data = json_decode($response, true);
 
+    // Check if the access token was returned
     if (isset($response_data['access_token'])) {
+        // Store the access token in the session
         $_SESSION['access_token'] = $response_data['access_token'];
 
-        // Debugging: Log the session after setting access_token
-        file_put_contents('debug.log', "Session Variables:\n" . print_r($_SESSION, true), FILE_APPEND);
-
-        header('Location: callback.php');
+        // Redirect the user to the profile page (or wherever you want)
+        header("Location: profile.php");
         exit;
     } else {
-        echo "Error: Failed to retrieve access token.";
+        // Handle any error, for example, missing access token
+        echo "Error: Access token not found.";
         exit;
     }
 } else {
-    echo "Error: Authorization code not received.";
+    echo "Error: Code parameter missing in the URL.";
     exit;
 }
+?>
