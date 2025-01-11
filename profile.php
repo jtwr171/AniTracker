@@ -10,7 +10,7 @@ if (!isset($_SESSION['access_token']) || !isset($_SESSION['user_id'])) {
 // API URL to fetch the user's media list
 $api_url = 'https://graphql.anilist.co';
 
-// GraphQL query to fetch the media list with images
+// GraphQL query to fetch the media list with ratings and images
 $query = '{
   MediaListCollection(type: ANIME, userId: ' . $_SESSION['user_id'] . ') {
     lists {
@@ -26,6 +26,7 @@ $query = '{
             large
           }
         }
+        score
       }
     }
   }
@@ -106,6 +107,12 @@ $completed_list = $response_data['data']['MediaListCollection']['lists'][0]['ent
             font-weight: bold;
         }
 
+        .anime-entry .score {
+            margin-left: 10px;
+            color: #16a085;
+            font-weight: bold;
+        }
+
         .anime-entry:hover {
             background-color: #e7f1f9;
         }
@@ -138,6 +145,12 @@ $completed_list = $response_data['data']['MediaListCollection']['lists'][0]['ent
                 <div class="anime-entry">
                     <img src="<?php echo $entry['media']['coverImage']['large']; ?>" alt="<?php echo htmlspecialchars($entry['media']['title']['romaji']); ?>">
                     <div class="title"><?php echo htmlspecialchars($entry['media']['title']['romaji']); ?></div>
+                    <!-- Display the score if available -->
+                    <?php if ($entry['score'] !== null): ?>
+                        <div class="score">Rating: <?php echo $entry['score']; ?>/10</div>
+                    <?php else: ?>
+                        <div class="score">No rating</div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         </div>

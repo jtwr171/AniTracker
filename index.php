@@ -6,8 +6,8 @@
     <title>AniProTracker - Enter Your AniList Username</title>
 </head>
 <body>
-    <h1>Welcome to AniProTracker</h1>
-    <p>Enter your AniList username to track your anime progress.</p>
+    <h1>AniProTracker V1</h1>
+    <p>Enter your AniList username to enter the app.</p>
     <p>wtf is going on</p>
 
     <form action="authorize.php" method="GET">
@@ -17,15 +17,4 @@
     </form>
 </body>
 </html>
-<?php
-// Check if the CLIENT_SECRET is accessible
-$client_secret = getenv('CLIENT_SECRET');
-
-// Debugging: Output the CLIENT_SECRET value (or a message if not set)
-if ($client_secret) {
-    echo 'Client Secret is accessible: ' . htmlspecialchars($client_secret);
-} else {
-    echo 'CLIENT_SECRET is not accessible.';
-}
-?>
 
