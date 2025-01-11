@@ -1,98 +1,128 @@
 <?php
-session_start();
+session_start();  // Start the session
 
-// Retrieve the access token from the session
+// Check if the access token exists in the session
 if (!isset($_SESSION['access_token'])) {
-    echo "Error: Access token not found. Please log in again.";
+    // If no access token, redirect the user to the login page
+    header("Location: index.php");
     exit;
 }
 
+// Get the access token from the session
 $access_token = $_SESSION['access_token'];
 
-// AniList API GraphQL endpoint
-$graphql_url = 'https://graphql.anilist.co';
+// AniList API endpoint to get the current user's information
+$url = "https://graphql.anilist.co";
 
-// GraphQL query to fetch the user's anime list
-$query = '
-query ($userId: Int!, $type: MediaType!) {
-    MediaListCollection(userId: $userId, type: $type) {
-        lists {
-            name
-            entries {
-                media {
-                    title {
-                        romaji
-                        english
-                    }
-                    coverImage {
-                        large
-                    }
-                }
-            }
-        }
+// The GraphQL query to fetch user details
+$query = <<<QUERY
+{
+  Viewer {
+    id
+    name
+    avatar {
+      large
     }
-}';
+    about
+    statistics {
+      chaptersRead
+      booksRead
+      animeWatched
+    }
+  }
+}
+QUERY;
 
-// Replace with the actual AniList user ID
-$variables = [
-    'userId' => 206495,  // Replace with dynamic user data in the future
-    'type' => 'ANIME',   // Fetch anime data
-];
-
-// Prepare headers for the API request
+// Set up the request headers, including the access token
 $headers = [
-    'Authorization: Bearer ' . $access_token,
-    'Content-Type: application/json',
+    "Authorization: Bearer " . $access_token,
+    "Content-Type: application/json"
 ];
 
-// Initialize cURL for the API request
-$ch = curl_init($graphql_url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
+// Initialize cURL
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['query' => $query]));
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['query' => $query, 'variables' => $variables]));
 
+// Execute the request
 $response = curl_exec($ch);
 
-if (curl_errno($ch)) {
-    echo 'cURL Error: ' . curl_error($ch);
-    curl_close($ch);
+// Check for errors in the cURL request
+if (!$response) {
+    echo "cURL Error: " . curl_error($ch);
     exit;
 }
 
-// Decode the JSON response
-$data = json_decode($response, true);
 curl_close($ch);
 
-// Check if the anime list data is available
-if (isset($data['data']['MediaListCollection']['lists'])) {
-    $animeLists = $data['data']['MediaListCollection']['lists'];
+// Decode the response
+$response_data = json_decode($response, true);
 
-    echo "<h1>Welcome to Your Anime List</h1>";
-
-    foreach ($animeLists as $list) {
-        echo "<h2>" . htmlspecialchars($list['name']) . "</h2>";
-
-        if (!empty($list['entries'])) {
-            echo "<ul>";
-            foreach ($list['entries'] as $entry) {
-                $title = htmlspecialchars($entry['media']['title']['romaji'] ?? $entry['media']['title']['english']);
-                $coverImage = htmlspecialchars($entry['media']['coverImage']['large']);
-
-                echo "<li>";
-                echo "<img src='$coverImage' alt='Anime Cover' width='50' height='70'>";
-                echo "<strong>" . $title . "</strong>";
-                echo "</li>";
-            }
-            echo "</ul>";
-        } else {
-            echo "<p>No entries found in this list.</p>";
-        }
-    }
+// Check if the response contains user data
+if (isset($response_data['data']['Viewer'])) {
+    $user = $response_data['data']['Viewer'];
 } else {
-    echo "<p>Could not fetch the anime list. Please try again later.</p>";
-    if (isset($data['errors'])) {
-        echo "<pre>" . print_r($data['errors'], true) . "</pre>"; // Display API errors for debugging
-    }
+    // If there is no user data, display an error
+    echo "Error: Could not fetch user profile data.<br>";
+    exit;
 }
+
 ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .profile-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin-top: 50px;
+        }
+        .profile-container img {
+            border-radius: 50%;
+        }
+        .profile-container h1 {
+            margin-top: 20px;
+        }
+        .profile-container p {
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        .statistics {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <!-- Display the user's profile picture -->
+        <img src="<?php echo $user['avatar']['large']; ?>" alt="Profile Avatar" width="150" height="150">
+        
+        <!-- Display the user's name -->
+        <h1><?php echo htmlspecialchars($user['name']); ?></h1>
+
+        <!-- Display the user's "about" information -->
+        <?php if (!empty($user['about'])): ?>
+            <p><strong>About:</strong> <?php echo htmlspecialchars($user['about']); ?></p>
+        <?php endif; ?>
+
+        <!-- Display the user's statistics (optional) -->
+        <div class="statistics">
+            <p><strong>Anime Watched:</strong> <?php echo $user['statistics']['animeWatched']; ?></p>
+            <p><strong>Chapters Read:</strong> <?php echo $user['statistics']['chaptersRead']; ?></p>
+            <p><strong>Books Read:</strong> <?php echo $user['statistics']['booksRead']; ?></p>
+        </div>
+    </div>
+</body>
+</html>
