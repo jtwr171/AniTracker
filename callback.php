@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+// Start output buffering to prevent header issues
+ob_start();
+
 // Define AniList API credentials
 $client_id = "23612"; // Your client ID
 $client_secret = getenv('CLIENT_SECRET'); // Your client secret
@@ -37,17 +40,6 @@ if (isset($_GET['code']) && isset($_GET['state'])) {
     $response = curl_exec($ch);
     curl_close($ch);
 
-    // Debugging: Check if there was an error in the cURL request
-    if (curl_errno($ch)) {
-        echo 'Curl error: ' . curl_error($ch);
-        exit;
-    }
-
-    // Debugging: Display the full response from AniList API
-    echo "<pre>Response: ";
-    print_r($response);
-    echo "</pre>";
-
     // Decode the response to extract the access token and user info
     $response_data = json_decode($response, true);
 
@@ -82,11 +74,6 @@ if (isset($_GET['code']) && isset($_GET['state'])) {
         // Decode the user info response
         $user_info = json_decode($user_info_response, true);
 
-        // Debugging: Display the user info response
-        echo "<pre>User Info: ";
-        print_r($user_info);
-        echo "</pre>";
-
         if (isset($user_info['data']['Viewer']['id'])) {
             // Store the user ID in the session
             $_SESSION['user_id'] = $user_info['data']['Viewer']['id'];
@@ -104,4 +91,7 @@ if (isset($_GET['code']) && isset($_GET['state'])) {
 } else {
     echo "Error: Missing authorization code or state.";
 }
+
+// End output buffering and send the output
+ob_end_flush();
 ?>
