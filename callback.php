@@ -77,6 +77,7 @@ if (isset($_GET['code']) && isset($_GET['state'])) {
         if (isset($user_info['data']['Viewer']['id'])) {
             // Store the user ID in the session
             $_SESSION['user_id'] = $user_info['data']['Viewer']['id'];
+            $_SESSION['username'] = $user_info['data']['Viewer']['name'];
             echo "Login successful. Redirecting to your profile...";
 
             // Redirect to profile.php

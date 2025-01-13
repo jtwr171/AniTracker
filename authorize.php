@@ -3,9 +3,8 @@ session_start();
 
 // Define AniList API credentials
 $client_id = "23612";
-$client_secret = getenv('CLIENT_SECRET'); // Hardcoded client_secret for now
-$redirect_uri = "https://aniprotracker.onrender.com/callback.php"; // The redirect URI registered in AniList OAuth settings
-
+$client_secret = getenv('CLIENT_SECRET'); // Your client secret
+$redirect_uri = "https://aniprotracker.onrender.com/callback.php"; // Redirect URI
 // Get the username from the query parameters
 $username = isset($_GET['username']) ? $_GET['username'] : '';
 

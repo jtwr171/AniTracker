@@ -8,8 +8,8 @@
 <body>
     <h1>AniProTracker V1</h1>
     <p>Enter your AniList username to enter the app.</p>
-    <p>wtf is going on</p>
 
+    <!-- Form to input AniList username -->
     <form action="authorize.php" method="GET">
         <label for="username">AniList Username:</label>
         <input type="text" id="username" name="username" required>
@@ -17,4 +17,3 @@
     </form>
 </body>
 </html>
-
